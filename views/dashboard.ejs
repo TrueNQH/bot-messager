@@ -115,7 +115,7 @@
   // Tạo nút chuyển chế độ
   const toggleBtn = document.createElement('button');
   toggleBtn.className = 'btn btn-outline-secondary btn-sm';
-  toggleBtn.innerText = 'Mode: Admin';
+  toggleBtn.innerText = 'Mode: Bot';
   toggleBtn.onclick = () => {
     currentRole = currentRole === 'admin' ? 'bot' : 'admin';
     toggleBtn.innerText = `Mode: ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
@@ -144,26 +144,22 @@
 
     // ✅ Nếu đang ở bot mode → gửi request đến API
     if (currentRole === 'bot') {
-  // 👉 Gửi tín hiệu typing đến server (backend sẽ gửi đến Messenger)
-  socket.emit('send-typing', { senderId });
+        socket.emit('send-typing', { senderId });
+      const response = await fetch('https://ae67-116-110-6-126.ngrok-free.app/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: message })
+      });
+      const data = await response.json();
+      const botReply = data.response;
 
-  // ✅ Chờ 5 giây trước khi gửi phản hồi thực tế
-  setTimeout(async () => {
-    const response = await fetch('https://ae67-116-110-6-126.ngrok-free.app/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: message })
-    });
-    const data = await response.json();
-    const botReply = data.response;
-
-    contacts[senderId].messages.push({ from: 'admin', text: botReply });
-    if (selectedUserId === senderId) renderMessages(senderId);
-
-    saveToGoogleSheet(senderId, userInfo, message, botReply);
-    socket.emit('admin-reply', { senderId, message: botReply });
-  }, 3000);
-}
+      // Hiển thị bot trả lời
+      contacts[senderId].messages.push({ from: 'admin', text: botReply });
+      if (selectedUserId === senderId) renderMessages(senderId);
+      saveToGoogleSheet(senderId, userInfo, message, botReply);
+      // Gửi lại tin nhắn bot qua socket để backend gửi đến user
+      socket.emit('admin-reply', { senderId, message: botReply });
+    }
   });
 
   
@@ -205,7 +201,7 @@
         <p class="mb-1"><strong>Name:</strong> ${user.first_name} ${user.last_name}</p>
         <p class="mb-1"><strong>Gender:</strong> ${user.gender || 'N/A'}</p>
         <p class="mb-1"><strong>Locale:</strong> ${user.locale || 'N/A'}</p>
-        <p> <a href="https://facebook.com/${senderId}"><strong>Fackbook Profile</strong></a></p>
+        <p> <a href="https://facebook.com/${user.id}"><strong>Fackbook Profile</strong></a></p>
       </div>
     </div>
   `;
