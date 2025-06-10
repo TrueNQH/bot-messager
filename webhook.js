@@ -45,3 +45,13 @@ exports.sendMessageToUser = async (senderId, message) => {
     console.error('Lỗi gửi tin nhắn:', error.response?.data || error.message);
   }
 };
+exports.sendTypingIndicator = async (senderId) => {
+  try {
+    await axios.post(`https://graph.facebook.com/v17.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+      recipient: { id: senderId },
+      sender_action: 'typing_on'
+    });
+  } catch (error) {
+    console.error('Lỗi gửi typing:', error.response?.data || error.message);
+  }
+};

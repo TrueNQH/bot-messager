@@ -108,7 +108,7 @@
   <script>
   const socket = io();
   let selectedUserId = null;
-  let currentRole = 'admin'; // hoặc 'bot'
+  let currentRole = 'bot'; // hoặc 'bot'
 
   const contacts = {}; // {userId: { name, messages: [], info }}
 
@@ -144,23 +144,29 @@
 
     // ✅ Nếu đang ở bot mode → gửi request đến API
     if (currentRole === 'bot') {
-      const response = await fetch('https://ae67-116-110-6-126.ngrok-free.app/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: message })
-      });
-      const data = await response.json();
-      const botReply = data.response;
+  // 👉 Gửi tín hiệu typing đến server (backend sẽ gửi đến Messenger)
+  socket.emit('send-typing', { senderId });
 
-      // Hiển thị bot trả lời
-      contacts[senderId].messages.push({ from: 'admin', text: botReply });
-      if (selectedUserId === senderId) renderMessages(senderId);
-      saveToGoogleSheet(senderId, userInfo, message, botReply);
-      // Gửi lại tin nhắn bot qua socket để backend gửi đến user
-      socket.emit('admin-reply', { senderId, message: botReply });
-    }
+  // ✅ Chờ 5 giây trước khi gửi phản hồi thực tế
+  setTimeout(async () => {
+    const response = await fetch('https://ae67-116-110-6-126.ngrok-free.app/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: message })
+    });
+    const data = await response.json();
+    const botReply = data.response;
+
+    contacts[senderId].messages.push({ from: 'admin', text: botReply });
+    if (selectedUserId === senderId) renderMessages(senderId);
+
+    saveToGoogleSheet(senderId, userInfo, message, botReply);
+    socket.emit('admin-reply', { senderId, message: botReply });
+  }, 3000);
+}
   });
 
+  
   function addContactToSidebar(userId) {
     const el = document.createElement('div');
     el.className = 'contact';
@@ -217,7 +223,7 @@
     input.value = '';
   }
   function saveToGoogleSheet(senderId, userInfo, userMessage, adminReply) {
-  fetch('/api/save-to-sheet', {
+  fetch('/save-to-sheet', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
