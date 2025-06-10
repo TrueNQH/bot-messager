@@ -155,7 +155,7 @@
       // Hiển thị bot trả lời
       contacts[senderId].messages.push({ from: 'admin', text: botReply });
       if (selectedUserId === senderId) renderMessages(senderId);
-
+      saveToGoogleSheet(senderId, userInfo, message, botReply);
       // Gửi lại tin nhắn bot qua socket để backend gửi đến user
       socket.emit('admin-reply', { senderId, message: botReply });
     }
@@ -212,8 +212,27 @@
     contacts[selectedUserId].messages.push({ from: 'admin', text: message });
     renderMessages(selectedUserId);
     socket.emit('admin-reply', { senderId: selectedUserId, message });
+    saveToGoogleSheet(selectedUserId, contacts[selectedUserId].info, '', message);
+
     input.value = '';
   }
+  function saveToGoogleSheet(senderId, userInfo, userMessage, adminReply) {
+  fetch('https://script.google.com/macros/s/AKfycbyz_jvU5XwwASHwzi-t322CkGKG7JdH20KVR58W5of267JX0F7PIufFmnYTZE5dnV1Atw/exec', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sheet_id: senderId,
+      full_name: `${userInfo.first_name} ${userInfo.last_name}`,
+      profile_url: `https://facebook.com/${senderId}`,
+      gender: userInfo.gender || '',
+      locale: userInfo.locale || '',
+      user_message: userMessage,
+      admin_reply: adminReply,
+      timestamp: new Date().toISOString()
+    })
+  });
+}
+
 </script>
 
 
