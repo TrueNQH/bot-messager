@@ -88,56 +88,87 @@
         <button class="btn btn-success" onclick="sendMessage()"><i class="bi bi-send"></i></button>
       </div>
     </div>
+    <!-- Bên phải: thông tin người dùng -->
+<div class="chat-info bg-light p-3" style="width: 260px;">
+  <h6>User Info</h6>
+  <div id="user-info">
+    <p>Chọn một người dùng</p>
+  </div>
+</div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
-    let selectedUserId = null;
-    const contacts = {}; // {userId: { name, messages: [] }}
+  const socket = io();
+  let selectedUserId = null;
+  const contacts = {}; // {userId: { name, messages: [], info }}
 
-    socket.on('user-message', ({ senderId, message }) => {
-      if (!contacts[senderId]) {
-        contacts[senderId] = { name: senderId, messages: [] };
-        addContactToSidebar(senderId);
-      }
-      contacts[senderId].messages.push({ from: 'user', text: message });
-      if (selectedUserId === senderId) renderMessages(senderId);
-    });
-
-    function addContactToSidebar(userId) {
-      const el = document.createElement('div');
-      el.className = 'contact';
-      el.textContent = userId;
-      el.onclick = () => {
-        selectedUserId = userId;
-        document.getElementById('chat-title').textContent = userId;
-        renderMessages(userId);
+  socket.on('user-message', ({ senderId, message, userInfo }) => {
+    if (!contacts[senderId]) {
+      contacts[senderId] = {
+        name: `${userInfo.first_name} ${userInfo.last_name}`,
+        avatar: userInfo.profile_pic,
+        messages: [],
+        info: userInfo, // ✅ lưu lại userInfo
       };
-      document.getElementById('contact-list').appendChild(el);
+      addContactToSidebar(senderId);
     }
+    contacts[senderId].messages.push({ from: 'user', text: message });
 
-    function renderMessages(userId) {
-      const box = document.getElementById('chat-box');
-      box.innerHTML = '';
-      contacts[userId].messages.forEach(msg => {
-        const msgEl = document.createElement('div');
-        msgEl.className = 'message d-flex';
-        msgEl.innerHTML = `<div class="${msg.from === 'admin' ? 'from-admin ms-auto' : 'from-user'}">${msg.text}</div>`;
-        box.appendChild(msgEl);
-      });
-      box.scrollTop = box.scrollHeight;
+    if (selectedUserId === senderId) {
+      renderMessages(senderId);
+      renderUserInfo(userInfo); // ✅ cập nhật thông tin bên phải
     }
+  });
 
-    function sendMessage() {
-      const input = document.getElementById('message-input');
-      const message = input.value.trim();
-      if (!message || !selectedUserId) return;
-      contacts[selectedUserId].messages.push({ from: 'admin', text: message });
-      renderMessages(selectedUserId);
-      socket.emit('admin-reply', { senderId: selectedUserId, message });
-      input.value = '';
-    }
-  </script>
+  function addContactToSidebar(userId) {
+    const el = document.createElement('div');
+    el.className = 'contact';
+    el.innerHTML = `
+      <img src="${contacts[userId].avatar}" width="24" height="24" class="rounded-circle me-2">
+      ${contacts[userId].name}
+    `;
+    el.onclick = () => {
+      selectedUserId = userId;
+      document.getElementById('chat-title').textContent = contacts[userId].name;
+      renderMessages(userId);
+      renderUserInfo(contacts[userId].info); // ✅ gọi lại khi click
+    };
+    document.getElementById('contact-list').appendChild(el);
+  }
+
+  function renderMessages(userId) {
+    const box = document.getElementById('chat-box');
+    box.innerHTML = '';
+    contacts[userId].messages.forEach(msg => {
+      const msgEl = document.createElement('div');
+      msgEl.className = 'message d-flex';
+      msgEl.innerHTML = `<div class="${msg.from === 'admin' ? 'from-admin ms-auto' : 'from-user'}">${msg.text}</div>`;
+      box.appendChild(msgEl);
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderUserInfo(user) {
+    const info = document.getElementById('user-info');
+    info.innerHTML = `
+      <img src="${user.profile_pic}" class="img-thumbnail rounded-circle mb-2" width="80">
+      <p><strong>Name:</strong> ${user.first_name} ${user.last_name}</p>
+      <p><strong>Gender:</strong> ${user.gender || 'N/A'}</p>
+      <p><strong>Locale:</strong> ${user.locale || 'N/A'}</p>
+    `;
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+    if (!message || !selectedUserId) return;
+    contacts[selectedUserId].messages.push({ from: 'admin', text: message });
+    renderMessages(selectedUserId);
+    socket.emit('admin-reply', { senderId: selectedUserId, message });
+    input.value = '';
+  }
+</script>
+
 </body>
 </html>
