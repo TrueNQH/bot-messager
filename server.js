@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: { origin: '*' }
 });
-
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyz_jvU5XwwASHwzi-t322CkGKG7JdH20KVR58W5of267JX0F7PIufFmnYTZE5dnV1Atw/exec';
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -24,6 +24,15 @@ app.set('views', path.join(__dirname, 'views'));
 // Route dashboard
 app.get('/', (req, res) => {
   res.render('dashboard'); // render views/dashboard.ejs
+});
+app.post('/save-to-sheet', async (req, res) => {
+  try {
+    const response = await axios.post(GOOGLE_SCRIPT_URL, req.body);
+    res.json({ status: 'success', googleResponse: response.data });
+  } catch (err) {
+    console.error('Lỗi gửi tới Google Sheet:', err.message);
+    res.status(500).json({ error: 'Ghi sheet thất bại' });
+  }
 });
 
 // Facebook Messenger Webhook

@@ -199,7 +199,7 @@
         <p class="mb-1"><strong>Name:</strong> ${user.first_name} ${user.last_name}</p>
         <p class="mb-1"><strong>Gender:</strong> ${user.gender || 'N/A'}</p>
         <p class="mb-1"><strong>Locale:</strong> ${user.locale || 'N/A'}</p>
-        <p class="mb-1"><strong>User ID:</strong> <small>${user.id || 'Hidden'}</small></p>
+        <p> <a href="https://facebook.com/${senderId}"><strong>Fackbook Profile</strong></a></p>
       </div>
     </div>
   `;
@@ -217,7 +217,7 @@
     input.value = '';
   }
   function saveToGoogleSheet(senderId, userInfo, userMessage, adminReply) {
-  fetch('https://script.google.com/macros/s/AKfycbyz_jvU5XwwASHwzi-t322CkGKG7JdH20KVR58W5of267JX0F7PIufFmnYTZE5dnV1Atw/exec', {
+  fetch('/api/save-to-sheet', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
