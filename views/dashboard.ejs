@@ -1,18 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Chat Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f8f9fa;
+    }
+    .chat-sidebar {
+      width: 280px;
+      background-color: #2f855a;
+      color: white;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .chat-sidebar .contact {
+      padding: 10px;
+      border-bottom: 1px solid #4fd1c5;
+      cursor: pointer;
+    }
+    .chat-sidebar .contact:hover {
+      background-color: #38a169;
+    }
+    .chat-main {
+      flex: 1;
+      background-color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .chat-header, .chat-footer {
+      padding: 15px;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+    .message {
+      margin-bottom: 15px;
+    }
+    .message .from-admin {
+      background-color: #38a169;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 12px;
+      max-width: 60%;
+      align-self: flex-end;
+    }
+    .message .from-user {
+      background-color: #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 12px;
+      max-width: 60%;
+      align-self: flex-start;
+    }
+    .chat-footer input {
+      width: 80%;
+    }
+  </style>
 </head>
 <body>
-  <h2>Tin nhắn từ người dùng:</h2>
-  <div id="messages"></div>
+  <div class="d-flex">
+    <!-- Sidebar -->
+    <div class="chat-sidebar">
+      <h5 class="p-3">Messages</h5>
+      <div id="contact-list">
+        <!-- Contacts rendered here -->
+      </div>
+    </div>
 
-  <h3>Gửi phản hồi</h3>
-  <input type="text" id="senderId" placeholder="Sender ID">
-  <input type="text" id="reply" placeholder="Tin nhắn phản hồi">
-  <button onclick="sendReply()">Gửi</button>
+    <!-- Main chat area -->
+    <div class="chat-main">
+      <div class="chat-header d-flex justify-content-between align-items-center">
+        <h6 id="chat-title">Select a user</h6>
+      </div>
+      <div class="chat-messages d-flex flex-column" id="chat-box">
+        <!-- Messages go here -->
+      </div>
+      <div class="chat-footer d-flex align-items-center">
+        <input type="text" class="form-control me-2" id="message-input" placeholder="Type a message...">
+        <button class="btn btn-success" onclick="sendMessage()"><i class="bi bi-send"></i></button>
+      </div>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/script.js"></script>
+  <script>
+    const socket = io();
+    let selectedUserId = null;
+    const contacts = {}; // {userId: { name, messages: [] }}
+
+    socket.on('user-message', ({ senderId, message }) => {
+      if (!contacts[senderId]) {
+        contacts[senderId] = { name: senderId, messages: [] };
+        addContactToSidebar(senderId);
+      }
+      contacts[senderId].messages.push({ from: 'user', text: message });
+      if (selectedUserId === senderId) renderMessages(senderId);
+    });
+
+    function addContactToSidebar(userId) {
+      const el = document.createElement('div');
+      el.className = 'contact';
+      el.textContent = userId;
+      el.onclick = () => {
+        selectedUserId = userId;
+        document.getElementById('chat-title').textContent = userId;
+        renderMessages(userId);
+      };
+      document.getElementById('contact-list').appendChild(el);
+    }
+
+    function renderMessages(userId) {
+      const box = document.getElementById('chat-box');
+      box.innerHTML = '';
+      contacts[userId].messages.forEach(msg => {
+        const msgEl = document.createElement('div');
+        msgEl.className = 'message d-flex';
+        msgEl.innerHTML = `<div class="${msg.from === 'admin' ? 'from-admin ms-auto' : 'from-user'}">${msg.text}</div>`;
+        box.appendChild(msgEl);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('message-input');
+      const message = input.value.trim();
+      if (!message || !selectedUserId) return;
+      contacts[selectedUserId].messages.push({ from: 'admin', text: message });
+      renderMessages(selectedUserId);
+      socket.emit('admin-reply', { senderId: selectedUserId, message });
+      input.value = '';
+    }
+  </script>
 </body>
 </html>
