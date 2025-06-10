@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Chat Dashboard</title>
+</head>
+<body>
+  <h2>Tin nhắn từ người dùng:</h2>
+  <div id="messages"></div>
+
+  <h3>Gửi phản hồi</h3>
+  <input type="text" id="senderId" placeholder="Sender ID">
+  <input type="text" id="reply" placeholder="Tin nhắn phản hồi">
+  <button onclick="sendReply()">Gửi</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/script.js"></script>
+</body>
+</html>
