@@ -63,6 +63,13 @@
     .chat-footer input {
       width: 80%;
     }
+    .chat-info {
+        width: 280px;
+        background-color: #f1f5f9;
+        height: 100vh;
+        overflow-y: auto;
+        border-left: 1px solid #ccc;
+}
   </style>
 </head>
 <body>
@@ -101,23 +108,56 @@
   <script>
   const socket = io();
   let selectedUserId = null;
+  let currentRole = 'admin'; // hoặc 'bot'
+
   const contacts = {}; // {userId: { name, messages: [], info }}
 
-  socket.on('user-message', ({ senderId, message, userInfo }) => {
+  // Tạo nút chuyển chế độ
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'btn btn-outline-secondary btn-sm';
+  toggleBtn.innerText = 'Mode: Admin';
+  toggleBtn.onclick = () => {
+    currentRole = currentRole === 'admin' ? 'bot' : 'admin';
+    toggleBtn.innerText = `Mode: ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
+  };
+  window.addEventListener('load', () => {
+    document.querySelector('.chat-header').appendChild(toggleBtn);
+  });
+
+  socket.on('user-message', async ({ senderId, message, userInfo }) => {
     if (!contacts[senderId]) {
       contacts[senderId] = {
         name: `${userInfo.first_name} ${userInfo.last_name}`,
         avatar: userInfo.profile_pic,
         messages: [],
-        info: userInfo, // ✅ lưu lại userInfo
+        info: userInfo
       };
       addContactToSidebar(senderId);
     }
+
     contacts[senderId].messages.push({ from: 'user', text: message });
 
     if (selectedUserId === senderId) {
       renderMessages(senderId);
-      renderUserInfo(userInfo); // ✅ cập nhật thông tin bên phải
+      renderUserInfo(userInfo);
+    }
+
+    // ✅ Nếu đang ở bot mode → gửi request đến API
+    if (currentRole === 'bot') {
+      const response = await fetch('https://ae67-116-110-6-126.ngrok-free.app/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: message })
+      });
+      const data = await response.json();
+      const botReply = data.response;
+
+      // Hiển thị bot trả lời
+      contacts[senderId].messages.push({ from: 'admin', text: botReply });
+      if (selectedUserId === senderId) renderMessages(senderId);
+
+      // Gửi lại tin nhắn bot qua socket để backend gửi đến user
+      socket.emit('admin-reply', { senderId, message: botReply });
     }
   });
 
@@ -132,7 +172,7 @@
       selectedUserId = userId;
       document.getElementById('chat-title').textContent = contacts[userId].name;
       renderMessages(userId);
-      renderUserInfo(contacts[userId].info); // ✅ gọi lại khi click
+      renderUserInfo(contacts[userId].info);
     };
     document.getElementById('contact-list').appendChild(el);
   }
@@ -150,14 +190,20 @@
   }
 
   function renderUserInfo(user) {
-    const info = document.getElementById('user-info');
-    info.innerHTML = `
-      <img src="${user.profile_pic}" class="img-thumbnail rounded-circle mb-2" width="80">
-      <p><strong>Name:</strong> ${user.first_name} ${user.last_name}</p>
-      <p><strong>Gender:</strong> ${user.gender || 'N/A'}</p>
-      <p><strong>Locale:</strong> ${user.locale || 'N/A'}</p>
-    `;
-  }
+  const info = document.getElementById('user-info');
+  info.innerHTML = `
+    <div class="card border-0">
+      <img src="${user.profile_pic}" style="width: 100%; height: auto; object-fit: cover;" class="mb-3" alt="Avatar">
+
+      <div class="card-body p-0">
+        <p class="mb-1"><strong>Name:</strong> ${user.first_name} ${user.last_name}</p>
+        <p class="mb-1"><strong>Gender:</strong> ${user.gender || 'N/A'}</p>
+        <p class="mb-1"><strong>Locale:</strong> ${user.locale || 'N/A'}</p>
+        <p class="mb-1"><strong>User ID:</strong> <small>${user.id || 'Hidden'}</small></p>
+      </div>
+    </div>
+  `;
+}
 
   function sendMessage() {
     const input = document.getElementById('message-input');
@@ -169,6 +215,7 @@
     input.value = '';
   }
 </script>
+
 
 </body>
 </html>
