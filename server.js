@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: { origin: '*' }
 });
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz33vceaPqE013Y5cydtpKbPH99kwf_aR_DOiuUar05ZxYh8lNc59fkrX3Lwu4y6ZUySg/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBdbezVk-zC_KGs_d7vP5ZgSbuNGrxVYhXtZmLNZuA7Yoi9LmXxSCCB-RFdunKNNb_eg/exec';
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
