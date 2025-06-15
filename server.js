@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: { origin: '*' }
 });
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3Kkoxemi-rFst7gdno2vzpefCPhifXPEPdPa0GVulZ1q2gZJGhNrTTivDhjt-WfFl4g/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz33vceaPqE013Y5cydtpKbPH99kwf_aR_DOiuUar05ZxYh8lNc59fkrX3Lwu4y6ZUySg/exec';
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -42,6 +42,16 @@ app.get('/get-chat-history/:userId', async (req, res) => {
   } catch (error) {
     console.error('Lỗi khi lấy dữ liệu từ Google Sheet:', error.message);
     res.status(500).json({ error: 'Lỗi lấy dữ liệu từ Google Sheet' });
+  }
+});
+app.get('/list-users', async (req, res) => {
+  try {
+    const response = await fetch(GOOGLE_SCRIPT_URL + "?function=listAllUsers"); // gửi GET đến Apps Script
+    const users = await response.json(); // mảng các sheetName
+    res.json(users);
+  } catch (err) {
+    console.error('Lỗi khi lấy danh sách user:', err.message);
+    res.status(500).json({ error: 'Không thể lấy danh sách người dùng' });
   }
 });
 // Facebook Messenger Webhook
