@@ -163,27 +163,36 @@
   });
 
   
-  function addContactToSidebar(userId) {
-    el.onclick = async () => {
-  selectedUserId = userId;
-  document.getElementById('chat-title').textContent = contacts[userId].name;
-  renderUserInfo(contacts[userId].info);
+function addContactToSidebar(userId) {
+  const el = document.createElement('div');
+  el.className = 'contact';
+  el.innerHTML = `
+    <img src="${contacts[userId].avatar}" width="24" height="24" class="rounded-circle me-2">
+    ${contacts[userId].name}
+  `;
 
-  // Fetch lịch sử từ Google Sheet
-  const res = await fetch(`/get-chat-history/${userId}`);
-  const history = await res.json();
+  el.onclick = async () => {
+    selectedUserId = userId;
+    document.getElementById('chat-title').textContent = contacts[userId].name;
+    renderUserInfo(contacts[userId].info);
 
-  if (Array.isArray(history)) {
-    contacts[userId].messages = [];
-    history.forEach(entry => {
-      if (entry.user_message) contacts[userId].messages.push({ from: 'user', text: entry.user_message });
-      if (entry.admin_reply) contacts[userId].messages.push({ from: 'admin', text: entry.admin_reply });
-    });
-  }
+    // Fetch lịch sử từ Google Sheet
+    const res = await fetch(`/get-chat-history/${userId}`);
+    const history = await res.json();
 
-  renderMessages(userId);
-};
-  }
+    if (Array.isArray(history)) {
+      contacts[userId].messages = [];
+      history.forEach(entry => {
+        if (entry.user_message) contacts[userId].messages.push({ from: 'user', text: entry.user_message });
+        if (entry.admin_reply) contacts[userId].messages.push({ from: 'admin', text: entry.admin_reply });
+      });
+    }
+
+    renderMessages(userId);
+  };
+
+  document.getElementById('contact-list').appendChild(el);
+}
 
   function renderMessages(userId) {
     const box = document.getElementById('chat-box');
