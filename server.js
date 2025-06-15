@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: { origin: '*' }
 });
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyz_jvU5XwwASHwzi-t322CkGKG7JdH20KVR58W5of267JX0F7PIufFmnYTZE5dnV1Atw/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3Kkoxemi-rFst7gdno2vzpefCPhifXPEPdPa0GVulZ1q2gZJGhNrTTivDhjt-WfFl4g/exec';
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -34,7 +34,16 @@ app.post('/save-to-sheet', async (req, res) => {
     res.status(500).json({ error: 'Ghi sheet thất bại' });
   }
 });
-
+app.get('/get-chat-history/:userId', async (req, res) => {
+  const userId = req.params.userId;
+  try {
+    const response = await axios.get(`${GOOGLE_SCRIPT_URL}?sheet_id=${userId}`);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Lỗi khi lấy dữ liệu từ Google Sheet:', error.message);
+    res.status(500).json({ error: 'Lỗi lấy dữ liệu từ Google Sheet' });
+  }
+});
 // Facebook Messenger Webhook
 app.get('/webhook', (req, res) => {
   const VERIFY_TOKEN = process.env.VERIFY_TOKEN;

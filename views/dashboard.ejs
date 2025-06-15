@@ -145,7 +145,7 @@
     // ✅ Nếu đang ở bot mode → gửi request đến API
     if (currentRole === 'bot') {
         socket.emit('send-typing', { senderId });
-      const response = await fetch('https://3956-2402-800-6205-55eb-6c82-7adf-9882-abc4.ngrok-free.app/api/chat', {
+      const response = await fetch('https://f721-42-114-142-161.ngrok-free.app/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: message })
@@ -164,19 +164,25 @@
 
   
   function addContactToSidebar(userId) {
-    const el = document.createElement('div');
-    el.className = 'contact';
-    el.innerHTML = `
-      <img src="${contacts[userId].avatar}" width="24" height="24" class="rounded-circle me-2">
-      ${contacts[userId].name}
-    `;
-    el.onclick = () => {
-      selectedUserId = userId;
-      document.getElementById('chat-title').textContent = contacts[userId].name;
-      renderMessages(userId);
-      renderUserInfo(contacts[userId].info);
-    };
-    document.getElementById('contact-list').appendChild(el);
+    el.onclick = async () => {
+  selectedUserId = userId;
+  document.getElementById('chat-title').textContent = contacts[userId].name;
+  renderUserInfo(contacts[userId].info);
+
+  // Fetch lịch sử từ Google Sheet
+  const res = await fetch(`/get-chat-history/${userId}`);
+  const history = await res.json();
+
+  if (Array.isArray(history)) {
+    contacts[userId].messages = [];
+    history.forEach(entry => {
+      if (entry.user_message) contacts[userId].messages.push({ from: 'user', text: entry.user_message });
+      if (entry.admin_reply) contacts[userId].messages.push({ from: 'admin', text: entry.admin_reply });
+    });
+  }
+
+  renderMessages(userId);
+};
   }
 
   function renderMessages(userId) {
