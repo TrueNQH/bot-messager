@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: { origin: '*' }
 });
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBdbezVk-zC_KGs_d7vP5ZgSbuNGrxVYhXtZmLNZuA7Yoi9LmXxSCCB-RFdunKNNb_eg/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBcQqqxpbgyyDG1-OcRjxSy7KYJMyrht6pRogRTJkpT7QdPaHjD7_yB4uKC-gyBY5gLA/exec';
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -46,7 +46,7 @@ app.get('/get-chat-history/:userId', async (req, res) => {
 });
 app.get('/list-users', async (req, res) => {
   try {
-    const response = await fetch(GOOGLE_SCRIPT_URL + "?function=listAllUsers"); // gửi GET đến Apps Script
+    const response = await fetch(GOOGLE_SCRIPT_URL + "?mode=users"); // gửi GET đến Apps Script
     const users = await response.json(); // mảng các sheetName
     res.json(users);
   } catch (err) {
